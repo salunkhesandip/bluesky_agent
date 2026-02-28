@@ -1,0 +1,9 @@
+{
+  "dependencies": [
+    {
+      "type": "python",
+      "path": "./pyproject.toml"
+    }
+  ],
+  "pip_installer": "uv"
+}
