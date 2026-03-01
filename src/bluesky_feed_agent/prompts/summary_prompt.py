@@ -8,7 +8,7 @@ Your task is to:
 2. Identify key themes and topics
 3. Create a well-organized daily summary
 4. Highlight the most important or engaging posts
-5. Keep the summary to 3-5 paragraphs
+5. Keep the summary to 3-7 paragraphs
 
 Format the summary to be engaging and informative."""
 
