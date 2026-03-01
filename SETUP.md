@@ -68,9 +68,6 @@ Alternatively, using pip and requirements.txt:
 python3 -m venv venv
 source venv/bin/activate
 
-# Install from requirements.txt
-pip install -r requirements.txt
-```
 
 ### 5. Configure Credentials in WSL
 
@@ -218,17 +215,6 @@ Or install with development tools:
 uv sync --all-extras
 ```
 
-Alternatively, using pip and requirements.txt:
-
-```bash
-# Create virtual environment (optional but recommended)
-python3 -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
-
-# Install from requirements.txt
-pip install -r requirements.txt
-```
-
 ### 3. Configure Credentials
 
 #### Option A: Using Environment Variables
@@ -353,7 +339,7 @@ uv pip install atproto
 
 - Check that `GOOGLE_API_KEY` is set correctly
 - Verify you have API credits available on your Google Cloud account
-- Ensure the model (gemini-1.5-pro) is available in your account
+- Ensure the model is available in your account
 
 ### Pydantic validation errors
 

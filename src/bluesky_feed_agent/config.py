@@ -9,7 +9,7 @@ DEFAULT_POST_LIMIT = 20
 MAX_POST_LIMIT = 100
 
 # Prompt Templates
-DEFAULT_SUMMARY_LENGTH = "3-5 paragraphs"
+DEFAULT_SUMMARY_LENGTH = "3-7 paragraphs"
 
 # Timeouts (in seconds)
 BLUESKY_TIMEOUT = 30
