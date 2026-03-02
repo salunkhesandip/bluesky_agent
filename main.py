@@ -39,6 +39,9 @@ async def main(user_handle: Optional[str] = None) -> None:
     print(result["summary"])
     print("=" * 70)
 
+    if result.get("email_status"):
+        print(f"\nEmail status: {result['email_status']}")
+
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(

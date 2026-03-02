@@ -9,7 +9,11 @@ from langchain_google_genai import ChatGoogleGenerativeAI
 from src.bluesky_feed_agent.states import BlueskyFeedState
 from src.bluesky_feed_agent.tools import BlueskyClient, format_posts_for_llm
 from src.bluesky_feed_agent.prompts import get_summary_prompt
-from src.bluesky_feed_agent.utils import get_bluesky_credentials, get_openai_api_key
+from src.bluesky_feed_agent.utils import (
+    get_bluesky_credentials,
+    get_openai_api_key,
+    send_summary_email_oauth,
+)
 
 def fetch_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
     """Fetch posts from Bluesky feed.
@@ -155,16 +159,26 @@ async def run_feed_summary_agent(
 
     # Handle both dict and object returns
     if isinstance(result, dict):
-        return {
+        response = {
             "posts": result.get("posts"),
             "raw_feed": result.get("raw_feed_text"),
             "summary": result.get("summary"),
             "error": result.get("error"),
         }
     else:
-        return {
+        response = {
             "posts": result.posts,
             "raw_feed": result.raw_feed_text,
             "summary": result.summary,
             "error": result.error,
         }
+
+    if response.get("summary") and not response.get("error"):
+        try:
+            response["email_status"] = send_summary_email_oauth(
+                response["summary"], user_handle or ""
+            )
+        except Exception as e:
+            response["email_status"] = f"failed: {str(e)}"
+
+    return response

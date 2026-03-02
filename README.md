@@ -55,6 +55,13 @@ BLUESKY_PASSWORD=your_app_password
 
 # Google Generative AI API key (get from https://makersuite.google.com/app/apikey)
 GOOGLE_API_KEY=your_google_api_key
+
+# Optional: Gmail OAuth email delivery for summaries
+GMAIL_OAUTH_ENABLED=false
+GMAIL_CREDENTIALS_FILE=credentials.json
+GMAIL_TOKEN_FILE=token.json
+GMAIL_OAUTH_FLOW=local
+SUMMARY_EMAIL_TO=your_email@gmail.com
 ```
 
 ### 3. Usage
@@ -72,6 +79,14 @@ result = await run_feed_summary_agent(user_handle="example.user")
 
 print(result["summary"])
 ```
+
+### Email Summary to Gmail (OAuth)
+
+1. In Google Cloud Console, enable Gmail API and create an OAuth Client ID for a Desktop app.
+2. Download the OAuth file and place it in project root as `credentials.json`.
+3. In `.env`, set `GMAIL_OAUTH_ENABLED=true` and `SUMMARY_EMAIL_TO=your_email@gmail.com`.
+4. Run the agent once; browser consent creates `token.json` for future runs.
+5. If browser sign-in spins, set `GMAIL_OAUTH_FLOW=manual` and rerun; open the printed URL and finish consent in browser.
 
 #### Using the CLI
 
