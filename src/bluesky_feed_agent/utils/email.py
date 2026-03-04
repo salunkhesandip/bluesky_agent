@@ -2,6 +2,7 @@
 
 import base64
 import os
+from datetime import datetime
 from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
@@ -89,9 +90,11 @@ def send_summary_email_oauth(summary: str, user_handle: str = "") -> str:
     service = build("gmail", "v1", credentials=creds)
 
     subject_target = user_handle if user_handle else "home feed"
+    # Append current date in MM/DD/YYYY format to subject
+    date_str = datetime.now().strftime("%m/%d/%Y")
     message = MIMEText(summary, "plain", "utf-8")
     message["to"] = to_email
-    message["subject"] = f"Bluesky Summary ({subject_target})"
+    message["subject"] = f"Bluesky Summary ({subject_target}) - {date_str}"
 
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
