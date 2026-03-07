@@ -17,6 +17,7 @@ from src.bluesky_feed_agent.utils import (
     get_bluesky_credentials,
     get_openai_api_key,
     send_summary_email_oauth,
+    send_summary_to_telegram,
 )
 
 
@@ -176,15 +177,7 @@ def create_agent_graph() -> StateGraph:
     return graph.compile()
 
 
-# ── Async runner with parallel TTS + email ───────────────────────────────
-
-async def _send_email_async(summary: str, user_handle: str, audio_path: str | None) -> str:
-    """Run the (blocking) email send in a thread pool."""
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(
-        None, send_summary_email_oauth, summary, user_handle, audio_path,
-    )
-
+# ── Async runner with parallel TTS + email + Telegram ────────────────────
 
 async def run_feed_summary_agent(
     user_handle: Optional[str] = None,
@@ -226,13 +219,16 @@ async def run_feed_summary_agent(
         audio_path = await audio_task
         response["audio_path"] = audio_path
 
-        try:
-            response["email_status"] = await _send_email_async(
-                response["summary"], user_handle or "", audio_path,
-            )
-        except Exception as e:
-            logger.error("Email send failed: %s", e)
-            response["email_status"] = f"failed: {e}"
+        # ── Send email (text only) and Telegram (MP3 only) in parallel ──
+        email_task = asyncio.create_task(_safe_email(
+            response["summary"], user_handle or "", None,
+        ))
+        telegram_task = asyncio.create_task(_safe_telegram(
+            response["summary"], audio_path,
+        ))
+
+        response["email_status"] = await email_task
+        response["telegram_status"] = await telegram_task
 
     return response
 
@@ -244,3 +240,24 @@ async def _safe_tts(summary: str) -> str | None:
     except Exception as e:
         logger.error("TTS generation failed: %s", e)
         return None
+
+
+async def _safe_email(summary: str, user_handle: str, audio_path: str | None) -> str:
+    """Send email, returning status string instead of raising."""
+    try:
+        loop = asyncio.get_running_loop()
+        return await loop.run_in_executor(
+            None, send_summary_email_oauth, summary, user_handle, audio_path,
+        )
+    except Exception as e:
+        logger.error("Email send failed: %s", e)
+        return f"failed: {e}"
+
+
+async def _safe_telegram(summary: str, audio_path: str | None) -> str:
+    """Send to Telegram, returning status string instead of raising."""
+    try:
+        return await send_summary_to_telegram(summary, audio_path)
+    except Exception as e:
+        logger.error("Telegram send failed: %s", e)
+        return f"failed: {e}"
