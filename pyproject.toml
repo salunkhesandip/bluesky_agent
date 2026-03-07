@@ -26,7 +26,8 @@ dependencies = [
     "atproto>=0.0.51", # Authenicated Transfer Protocol library
     "google-api-python-client>=2.190.0",
     "google-auth-httplib2>=0.2.0",
-    "google-auth-oauthlib>=1.2.0"
+    "google-auth-oauthlib>=1.2.0",
+    "edge-tts>=7.0.0",  # Text-to-speech for summary audio
 ]
 
 [project.optional-dependencies]

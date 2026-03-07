@@ -27,11 +27,14 @@ class BlueskyClient:
         self.client = Client()
         self.client.login(username, password)
 
-    def get_home_feed(self, limit: int = 20) -> list[dict]:
+    def get_home_feed(self, limit: int = 20, sort_by_likes: bool = False, filter_replies: bool = False, min_likes: int = 0) -> list[dict]:
         """Fetch posts from user's home feed.
 
         Args:
             limit: Maximum number of posts to fetch
+            sort_by_likes: If True, sort posts by like_count descending
+            filter_replies: If True, exclude reply posts (posts_no_replies behaviour)
+            min_likes: Minimum number of likes required for a post to be included
 
         Returns:
             List of posts with text content
@@ -42,6 +45,12 @@ class BlueskyClient:
 
             for feed_item in response.feed:
                 post = feed_item.post
+                # Skip replies if filter_replies is enabled
+                if filter_replies and getattr(post.record, "reply", None) is not None:
+                    continue
+                # Skip posts with fewer likes than min_likes
+                if min_likes > 0 and getattr(post, "like_count", 0) < min_likes:
+                    continue
                 posts.append(
                     {
                         "uri": post.uri,
@@ -54,23 +63,27 @@ class BlueskyClient:
                         "repost_count": post.repost_count,
                     }
                 )
+            print(f"Number of posts after filter: {len(posts)}")
+            if sort_by_likes:
+                posts.sort(key=lambda p: p["like_count"], reverse=True)
 
             return posts
         except Exception as e:
             raise RuntimeError(f"Failed to fetch Bluesky feed: {str(e)}")
 
-    def get_user_feed(self, handle: str, limit: int = 20) -> list[dict]:
+    def get_user_feed(self, handle: str, limit: int = 20, sort_by_likes: bool = False) -> list[dict]:
         """Fetch posts from a specific user's feed.
 
         Args:
             handle: User's Bluesky handle
             limit: Maximum number of posts to fetch
+            sort_by_likes: If True, sort posts by like_count descending
 
         Returns:
             List of posts with text content
         """
         try:
-            response = self.client.get_author_feed(handle, limit=limit)
+            response = self.client.get_author_feed(handle, limit=limit, filter="posts_no_replies")
             posts = []
 
             for feed_item in response.feed:
@@ -88,6 +101,9 @@ class BlueskyClient:
                     }
                 )
 
+            if sort_by_likes:
+                posts.sort(key=lambda p: p["like_count"], reverse=True)
+            print(f"Number of posts after filter: {len(posts)}")
             return posts
         except Exception as e:
             raise RuntimeError(f"Failed to fetch user feed: {str(e)}")

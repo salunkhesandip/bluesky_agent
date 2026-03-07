@@ -13,6 +13,7 @@ from src.bluesky_feed_agent.utils import (
     get_bluesky_credentials,
     get_openai_api_key,
     send_summary_email_oauth,
+    generate_summary_audio,
 )
 
 def fetch_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
@@ -39,9 +40,9 @@ def fetch_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
 
         # Fetch feed
         if state.user_handle:
-            posts = client.get_user_feed(state.user_handle, limit=limit)
+            posts = client.get_user_feed(state.user_handle, limit=limit, sort_by_likes=True, filter_replies=True, min_likes=50)
         else:
-            posts = client.get_home_feed(limit=limit)
+            posts = client.get_home_feed(limit=limit, sort_by_likes=True, filter_replies=True, min_likes=50)
 
         state.posts = posts
         return state
@@ -174,9 +175,18 @@ async def run_feed_summary_agent(
         }
 
     if response.get("summary") and not response.get("error"):
+        # Generate TTS audio from summary
+        audio_path = None
+        try:
+            audio_path = await generate_summary_audio(response["summary"])
+            response["audio_path"] = audio_path
+        except Exception as e:
+            response["audio_path"] = None
+            response["tts_error"] = f"failed: {str(e)}"
+
         try:
             response["email_status"] = send_summary_email_oauth(
-                response["summary"], user_handle or ""
+                response["summary"], user_handle or "", audio_path=audio_path
             )
         except Exception as e:
             response["email_status"] = f"failed: {str(e)}"

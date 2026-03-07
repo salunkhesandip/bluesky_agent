@@ -3,6 +3,8 @@
 import base64
 import os
 from datetime import datetime
+from email.mime.audio import MIMEAudio
+from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
@@ -49,12 +51,15 @@ def _authorize_gmail(credentials_file: str) -> Credentials:
         )
 
 
-def send_summary_email_oauth(summary: str, user_handle: str = "") -> str:
+def send_summary_email_oauth(
+    summary: str, user_handle: str = "", audio_path: str | None = None
+) -> str:
     """Send summary email using Gmail OAuth.
 
     Args:
         summary: Generated summary text
         user_handle: Optional handle used in subject line
+        audio_path: Optional path to an MP3 audio file to attach
 
     Returns:
         Email status: sent or skipped
@@ -92,7 +97,20 @@ def send_summary_email_oauth(summary: str, user_handle: str = "") -> str:
     subject_target = user_handle if user_handle else "home feed"
     # Append current date in MM/DD/YYYY format to subject
     date_str = datetime.now().strftime("%m/%d/%Y")
-    message = MIMEText(summary, "plain", "utf-8")
+
+    if audio_path and os.path.exists(audio_path):
+        message = MIMEMultipart()
+        message.attach(MIMEText(summary, "plain", "utf-8"))
+        with open(audio_path, "rb") as f:
+            audio_part = MIMEAudio(f.read(), _subtype="mpeg")
+        audio_filename = f"bluesky_summary_{datetime.now().strftime('%Y%m%d_%H%M%S')}.mp3"
+        audio_part.add_header(
+            "Content-Disposition", "attachment", filename=audio_filename
+        )
+        message.attach(audio_part)
+    else:
+        message = MIMEText(summary, "plain", "utf-8")
+
     message["to"] = to_email
     message["subject"] = f"Bluesky Summary ({subject_target}) - {date_str}"
 
