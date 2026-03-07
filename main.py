@@ -4,7 +4,11 @@ import asyncio
 import argparse
 from typing import Optional
 from dotenv import load_dotenv
-
+import time
+import logging
+logging.getLogger("httpx").setLevel(logging.WARNING)
+from src.bluesky_feed_agent.config import logger
+logger.info(f"Program started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 from src.bluesky_feed_agent.agent import run_feed_summary_agent
 
 # Load environment variables from .env file
@@ -18,26 +22,26 @@ async def main(user_handle: Optional[str] = None) -> None:
         user_handle: Optional Bluesky user handle to summarize their feed.
                      If not provided, summarizes the home feed.
     """
-    print("Starting Bluesky Feed Summarization Agent...")
-    print()
-
+    
     if user_handle:
-        print(f"Fetching feed for @{user_handle}...")
+        logger.info(f"Fetching feed for @{user_handle}...")
     else:
-        print("Fetching home feed...")
+        logger.info("Fetching home feed...")
 
     result = await run_feed_summary_agent(user_handle=user_handle)
 
     if result["error"]:
-        print(f"Error: {result['error']}")
+        logger.error(f"Error: {result['error']}")
+        logger.info(f"Program ended at {time.strftime('%Y-%m-%d %H:%M:%S')}")
         return
 
-    print(f"\nFetched {len(result['posts'])} posts from Bluesky")
-    print("\n" + "=" * 70)
-    print("GENERATED SUMMARY")
-    print("=" * 70)
-    print(result["summary"])
-    print("=" * 70)
+    logger.info(f"Fetched {len(result['posts'])} posts from Bluesky")
+    logger.info("GENERATED SUMMARY:\n" + result["summary"])
+
+    if result.get("email_status"):
+        logger.info(f"Email status: {result['email_status']}")
+
+    logger.info(f"Program ended at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 
 
 if __name__ == "__main__":

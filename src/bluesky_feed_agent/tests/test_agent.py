@@ -3,7 +3,7 @@
 import pytest
 from unittest.mock import Mock, patch
 from src.bluesky_feed_agent.states import BlueskyFeedState
-from src.bluesky_feed_agent.tools import format_posts_for_llm
+from src.bluesky_feed_agent.tools import filter_posts, format_posts_for_llm
 
 
 @pytest.fixture
@@ -14,6 +14,7 @@ def sample_posts():
             "uri": "at://did:plc:123/app.bsky.feed.post/abc123",
             "cid": "abc123",
             "author": "user1.bsky.social",
+            "display_name": "User One",
             "text": "Hello everyone! This is my first post.",
             "created_at": "2024-02-23T10:00:00.000Z",
             "like_count": 42,
@@ -24,6 +25,7 @@ def sample_posts():
             "uri": "at://did:plc:456/app.bsky.feed.post/def456",
             "cid": "def456",
             "author": "user2.bsky.social",
+            "display_name": "User Two",
             "text": "Check out this interesting article about AI!",
             "created_at": "2024-02-23T11:00:00.000Z",
             "like_count": 120,
@@ -50,6 +52,30 @@ def test_format_empty_posts():
     """Test formatting empty posts list."""
     formatted = format_posts_for_llm([])
     assert "No posts found" in formatted
+
+
+def test_filter_removes_short_posts():
+    """Test that very short posts are filtered out."""
+    posts = [
+        {"text": "Hi", "author": "a", "like_count": 0, "reply_count": 0, "repost_count": 0},
+        {"text": "This is a sufficiently long post for testing purposes.", "author": "b",
+         "display_name": "B User", "like_count": 1, "reply_count": 0, "repost_count": 0},
+    ]
+    result = filter_posts(posts)
+    assert len(result) == 1
+    assert result[0]["author"] == "b"
+
+
+def test_filter_removes_duplicates():
+    """Test near-duplicate detection."""
+    posts = [
+        {"text": "This is a great day for open source software development",
+         "author": "a", "like_count": 1, "reply_count": 0, "repost_count": 0},
+        {"text": "This is a great day for open source software development!",
+         "author": "b", "like_count": 2, "reply_count": 0, "repost_count": 0},
+    ]
+    result = filter_posts(posts)
+    assert len(result) == 1
 
 
 def test_bluesky_feed_state():
