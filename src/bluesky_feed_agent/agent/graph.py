@@ -2,7 +2,7 @@
 
 import asyncio
 import os
-from typing import Optional
+from typing import Any, Dict, Optional
 
 from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
@@ -19,6 +19,19 @@ from src.bluesky_feed_agent.utils import (
     send_summary_email_oauth,
     send_summary_to_telegram,
 )
+
+# ── Constants ──────────────────────────────────────────────────────────
+DEFAULT_POST_LIMIT = 20
+SEPARATOR_THRESHOLD = 10  # Minimum separator line length
+
+# Response keys
+RESP_POSTS = "posts"
+RESP_RAW_FEED = "raw_feed"
+RESP_SUMMARY = "summary"
+RESP_ERROR = "error"
+RESP_AUDIO_PATH = "audio_path"
+RESP_EMAIL_STATUS = "email_status"
+RESP_TELEGRAM_STATUS = "telegram_status"
 
 
 # ── Helper: LLM singleton ───────────────────────────────────────────────
@@ -46,9 +59,10 @@ def fetch_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
         username, password = get_bluesky_credentials()
 
         try:
-            limit = int(os.getenv("POST_LIMIT", "20"))
+            limit = int(os.getenv("POST_LIMIT", str(DEFAULT_POST_LIMIT)))
         except ValueError:
-            limit = 20
+            logger.warning("Invalid POST_LIMIT, using default %d", DEFAULT_POST_LIMIT)
+            limit = DEFAULT_POST_LIMIT
 
         client = BlueskyClient(username=username, password=password)
 
@@ -195,46 +209,42 @@ async def run_feed_summary_agent(
     initial_state = BlueskyFeedState(user_handle=user_handle or "")
 
     result = agent.invoke(initial_state)
+    logger.info("Agent graph execution completed")
 
-    # Handle both dict and object returns
-    if isinstance(result, dict):
-        response = {
-            "posts": result.get("posts"),
-            "raw_feed": result.get("raw_feed_text"),
-            "summary": result.get("summary"),
-            "error": result.get("error"),
-        }
-    else:
-        response = {
-            "posts": result.posts,
-            "raw_feed": result.raw_feed_text,
-            "summary": result.summary,
-            "error": result.error,
-        }
+    # Build response dictionary from result
+    response: Dict[str, Any] = _build_response(result)
 
-    if response.get("summary") and not response.get("error"):
+    if response.get(RESP_SUMMARY) and not response.get(RESP_ERROR):
         # ── Parallel TTS + email ────────────────────────────────────
-        audio_task = asyncio.create_task(_safe_tts(response["summary"]))
+        audio_task = asyncio.create_task(_safe_tts(response[RESP_SUMMARY]))
         # Wait for audio first so we can attach it to the email
         audio_path = await audio_task
-        response["audio_path"] = audio_path
+        response[RESP_AUDIO_PATH] = audio_path
 
         # ── Send email (text only) and Telegram (MP3 only) in parallel ──
         email_task = asyncio.create_task(_safe_email(
-            response["summary"], user_handle or "", None,
+            response[RESP_SUMMARY], user_handle or "", None,
         ))
         telegram_task = asyncio.create_task(_safe_telegram(
-            response["summary"], audio_path,
+            response[RESP_SUMMARY], audio_path,
         ))
 
-        response["email_status"] = await email_task
-        response["telegram_status"] = await telegram_task
+        response[RESP_EMAIL_STATUS] = await email_task
+        response[RESP_TELEGRAM_STATUS] = await telegram_task
+        logger.info("Email and Telegram notifications sent")
 
     return response
 
 
-async def _safe_tts(summary: str) -> str | None:
-    """Generate TTS audio, returning None on failure instead of raising."""
+async def _safe_tts(summary: str) -> Optional[str]:
+    """Generate TTS audio, returning None on failure instead of raising.
+    
+    Args:
+        summary: Summary text to convert to audio
+        
+    Returns:
+        Path to generated MP3 file or None on failure
+    """
     try:
         return await generate_summary_audio(summary)
     except Exception as e:
@@ -242,8 +252,17 @@ async def _safe_tts(summary: str) -> str | None:
         return None
 
 
-async def _safe_email(summary: str, user_handle: str, audio_path: str | None) -> str:
-    """Send email, returning status string instead of raising."""
+async def _safe_email(summary: str, user_handle: str, audio_path: Optional[str]) -> str:
+    """Send email summary, returning status string instead of raising.
+    
+    Args:
+        summary: Summary text to send
+        user_handle: Bluesky user handle for email subject
+        audio_path: Optional path to audio file (not used in email)
+        
+    Returns:
+        Status string: "sent", "skipped", or error message
+    """
     try:
         loop = asyncio.get_running_loop()
         return await loop.run_in_executor(
@@ -254,10 +273,65 @@ async def _safe_email(summary: str, user_handle: str, audio_path: str | None) ->
         return f"failed: {e}"
 
 
-async def _safe_telegram(summary: str, audio_path: str | None) -> str:
-    """Send to Telegram, returning status string instead of raising."""
+async def _safe_telegram(summary: str, audio_path: Optional[str]) -> str:
+    """Send to Telegram with MP3 audio, returning status string instead of raising.
+    
+    Args:
+        summary: Summary text to extract thematic overview from
+        audio_path: Path to MP3 audio file to send
+        
+    Returns:
+        Status string: "sent", "skipped", or error message
+    """
     try:
-        return await send_summary_to_telegram(summary, audio_path)
+        # Extract thematic overview (first sentence after date header)
+        thematic_overview = _extract_thematic_overview(summary)
+        return await send_summary_to_telegram(audio_path, thematic_overview)
     except Exception as e:
         logger.error("Telegram send failed: %s", e)
         return f"failed: {e}"
+
+
+def _build_response(result: Any) -> Dict[str, Any]:
+    """Build response dictionary from agent result.
+    
+    Handles both dict and object return types from LangGraph.
+    
+    Args:
+        result: Agent execution result (dict or BlueskyFeedState object)
+        
+    Returns:
+        Normalized response dictionary
+    """
+    if isinstance(result, dict):
+        return {
+            RESP_POSTS: result.get("posts"),
+            RESP_RAW_FEED: result.get("raw_feed_text"),
+            RESP_SUMMARY: result.get("summary"),
+            RESP_ERROR: result.get("error"),
+        }
+    else:
+        # Handle BlueskyFeedState object
+        return {
+            RESP_POSTS: result.posts,
+            RESP_RAW_FEED: result.raw_feed_text,
+            RESP_SUMMARY: result.summary,
+            RESP_ERROR: result.error,
+        }
+
+
+def _extract_thematic_overview(summary: str) -> Optional[str]:
+    """Extract thematic overview (first sentence) from summary.
+    
+    Args:
+        summary: Full summary text
+        
+    Returns:
+        First sentence after date header, or None if not found
+    """
+    lines = summary.split("\n")
+    for line in lines:
+        line = line.strip()
+        if line and not line.startswith("**"):  # Skip date header
+            return line
+    return None
