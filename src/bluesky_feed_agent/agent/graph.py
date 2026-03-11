@@ -23,6 +23,7 @@ from src.bluesky_feed_agent.utils import (
 # ── Constants ──────────────────────────────────────────────────────────
 DEFAULT_POST_LIMIT = 20
 SEPARATOR_THRESHOLD = 10  # Minimum separator line length
+MIN_LIKES = 50  # Minimum likes threshold for filtering posts
 
 # Response keys
 RESP_POSTS = "posts"
@@ -72,7 +73,7 @@ def fetch_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
             )
         else:
             posts = client.get_home_feed(
-                limit=limit, sort_by_likes=True, filter_replies=True, min_likes=50,
+                limit=limit, sort_by_likes=True, filter_replies=True, min_likes=MIN_LIKES,
             )
 
         state.posts = posts
@@ -231,7 +232,17 @@ async def run_feed_summary_agent(
 
         response[RESP_EMAIL_STATUS] = await email_task
         response[RESP_TELEGRAM_STATUS] = await telegram_task
-        logger.info("Email and Telegram notifications sent")
+
+        email_ok = response[RESP_EMAIL_STATUS] == "sent"
+        telegram_ok = response[RESP_TELEGRAM_STATUS] == "sent"
+
+        if email_ok and telegram_ok:
+            logger.info("Email and Telegram notifications sent")
+        else:
+            if not email_ok:
+                logger.error("Email notification failed: %s", response[RESP_EMAIL_STATUS])
+            if not telegram_ok:
+                logger.error("Telegram notification failed: %s", response[RESP_TELEGRAM_STATUS])
 
     return response
 
