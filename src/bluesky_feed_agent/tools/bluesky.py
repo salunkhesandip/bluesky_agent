@@ -81,7 +81,7 @@ class BlueskyClient:
         self.client = Client()
         self.client.login(username, password)
 
-    def get_home_feed(self, limit: int = 20, sort_by_likes: bool = False, filter_replies: bool = False, min_likes: int = 0) -> list[dict]:
+    def get_home_feed(self, limit: int = 20, sort_by_likes: bool = True, filter_replies: bool = True, min_likes: int = 0) -> list[dict]:
         """Fetch posts from user's home feed.
 
         Args:
@@ -135,7 +135,7 @@ class BlueskyClient:
         except Exception as e:
             raise RuntimeError(f"Failed to fetch Bluesky feed: {str(e)}")
 
-    def get_user_feed(self, handle: str, limit: int = 20, sort_by_likes: bool = False) -> list[dict]:
+    def get_user_feed(self, handle: str, limit: int = 20, sort_by_likes: bool = True) -> list[dict]:
         """Fetch posts from a specific user's feed.
 
         Args:
