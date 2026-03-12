@@ -1,11 +1,26 @@
 """Configuration and constants for the Bluesky agent."""
 
 import logging
+import os
+from datetime import datetime
 
 # ── Logging ──────────────────────────────────────────────────────────────
+_log_format = "%(asctime)s [%(levelname)s] %(name)s: %(message)s"
+_handlers: list[logging.Handler] = [logging.StreamHandler()]
+
+_log_file = os.getenv("LOG_FILE")
+if _log_file:
+    _ts = datetime.now().strftime("%Y%m%d_%H%M%S")
+    _base, _ext = os.path.splitext(_log_file)
+    _log_file = f"{_base}_{_ts}{_ext or '.log'}"
+    if os.path.dirname(_log_file):
+        os.makedirs(os.path.dirname(_log_file), exist_ok=True)
+    _handlers.append(logging.FileHandler(_log_file, mode="a", encoding="utf-8"))
+
 logging.basicConfig(
     level=logging.INFO,
-    format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+    format=_log_format,
+    handlers=_handlers,
 )
 logger = logging.getLogger("bluesky_agent")
 
