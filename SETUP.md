@@ -257,11 +257,149 @@ $env:GOOGLE_API_KEY = "your_google_api_key"
 2. Create a new app password
 3. Copy the password and use it as `BLUESKY_PASSWORD`
 
-### 5. Getting Your OpenAI API Key
+### 5. Getting Your Google API Key
 
 1. Go to https://makersuite.google.com/app/apikey
 2. Create a new API key
 3. Copy and use it as `GOOGLE_API_KEY`
+
+---
+
+## Integrations
+
+### Gmail Integration (OAuth)
+
+Send summary emails to your inbox using Gmail API with OAuth 2.0.
+
+#### Step 1: Create Google Cloud Project
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com/)
+2. Create a new project or select an existing one
+3. Enable the **Gmail API**:
+   - Navigate to **APIs & Services > Library**
+   - Search for "Gmail API" and click **Enable**
+
+#### Step 2: Create OAuth Credentials
+
+1. Go to **APIs & Services > Credentials**
+2. Click **Create Credentials > OAuth client ID**
+3. If prompted, configure the OAuth consent screen:
+   - Choose **External** (or Internal for Workspace)
+   - Add your email as a test user
+4. Select **Desktop app** as the application type
+5. Download the JSON file and save it as `credentials.json` in the project root
+
+#### Step 3: Configure Environment Variables
+
+```bash
+GMAIL_OAUTH_ENABLED=true
+GMAIL_CREDENTIALS_FILE=credentials.json
+GMAIL_TOKEN_FILE=token.json
+GMAIL_OAUTH_FLOW=local
+SUMMARY_EMAIL_TO=your_email@gmail.com
+```
+
+#### Step 4: First Run Authentication
+
+1. Run the agent: `python main.py`
+2. A browser window opens for Google sign-in
+3. Grant the requested Gmail permissions
+4. A `token.json` file is created for future runs
+
+#### WSL/Headless Environment
+
+If the browser doesn't open automatically:
+
+```bash
+GMAIL_OAUTH_FLOW=manual
+```
+
+Then copy the printed URL, open it in your browser, and complete the sign-in.
+
+#### Token Expiry
+
+If you see `invalid_grant: Token has been expired or revoked`:
+
+1. Delete `token.json`
+2. Run the agent again to re-authenticate
+
+> **Note**: Changing your Google account password invalidates all OAuth tokens.
+
+---
+
+### Telegram Integration
+
+Send audio summaries to a Telegram chat or channel.
+
+#### Step 1: Create a Telegram Bot
+
+1. Open Telegram and search for [@BotFather](https://t.me/BotFather)
+2. Send `/newbot` and follow the prompts
+3. Copy the **bot token** (format: `123456789:ABCdefGHIjklMNOpqrsTUVwxyz`)
+
+#### Step 2: Get Your Chat ID
+
+**Option A: Personal Chat**
+1. Send any message to your new bot
+2. Visit: `https://api.telegram.org/bot<YOUR_BOT_TOKEN>/getUpdates`
+3. Find `"chat":{"id":123456789}` in the response
+
+**Option B: Group/Channel**
+1. Add your bot to the group/channel
+2. Make the bot an admin (for channels)
+3. Send a message in the group/channel
+4. Visit the getUpdates URL above
+5. Group IDs are negative (e.g., `-1001234567890`)
+
+#### Step 3: Configure Environment Variables
+
+```bash
+TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz
+TELEGRAM_CHAT_ID=123456789
+```
+
+#### What Gets Sent
+
+- The TTS audio file (MP3) of the summary
+- A caption with the thematic overview (first sentence of the summary)
+
+---
+
+### Text-to-Speech (TTS)
+
+Summaries are automatically converted to MP3 audio using Microsoft Edge TTS (free, no API key required).
+
+#### Configure Voice
+
+```bash
+# Default: US English female voice
+EDGE_TTS_VOICE=en-US-AriaNeural
+
+# US English male voice
+EDGE_TTS_VOICE=en-US-GuyNeural
+
+# British English female voice
+EDGE_TTS_VOICE=en-GB-SoniaNeural
+
+# Other languages available (Spanish, French, German, etc.)
+```
+
+#### List Available Voices
+
+```bash
+# Install edge-tts CLI
+pip install edge-tts
+
+# List all voices
+edge-tts --list-voices
+
+# Filter by language
+edge-tts --list-voices | grep en-US
+```
+
+See [edge-tts documentation](https://github.com/rany2/edge-tts) for the complete voice list.
+
+---
 
 ## Running the Agent
 
