@@ -8,6 +8,9 @@ A LangGraph agent that fetches posts from Bluesky and generates AI-powered daily
 - **AI Summarization**: Use Google's Gemini models to generate intelligent summaries of Bluesky feeds
 - **LangGraph Workflow**: Structured agent workflow for reliable processing
 - **Async Support**: Non-blocking async operations for better performance
+- **Text-to-Speech**: Convert summaries to MP3 audio using Edge TTS
+- **Gmail Integration**: Send summary emails via Gmail OAuth
+- **Telegram Integration**: Send audio summaries to Telegram chats/channels
 
 ## Project Structure
 
@@ -62,6 +65,13 @@ GMAIL_CREDENTIALS_FILE=credentials.json
 GMAIL_TOKEN_FILE=token.json
 GMAIL_OAUTH_FLOW=local
 SUMMARY_EMAIL_TO=your_email@gmail.com
+
+# Optional: Telegram audio delivery
+TELEGRAM_BOT_TOKEN=your_bot_token
+TELEGRAM_CHAT_ID=your_chat_id
+
+# Optional: TTS voice (default: en-US-AriaNeural)
+EDGE_TTS_VOICE=en-US-AriaNeural
 ```
 
 ### 3. Usage
@@ -87,6 +97,28 @@ print(result["summary"])
 3. In `.env`, set `GMAIL_OAUTH_ENABLED=true` and `SUMMARY_EMAIL_TO=your_email@gmail.com`.
 4. Run the agent once; browser consent creates `token.json` for future runs.
 5. If browser sign-in spins, set `GMAIL_OAUTH_FLOW=manual` and rerun; open the printed URL and finish consent in browser.
+
+> **Note**: If you change your Google account password, the token becomes invalid. Delete `token.json` and re-authenticate.
+
+### Telegram Audio Delivery
+
+1. Create a bot via [@BotFather](https://t.me/BotFather) and copy the bot token.
+2. Get your chat ID (send a message to your bot, then visit `https://api.telegram.org/bot<TOKEN>/getUpdates`).
+3. In `.env`, set `TELEGRAM_BOT_TOKEN` and `TELEGRAM_CHAT_ID`.
+4. The agent sends the TTS audio file with a thematic caption to your chat.
+
+### Text-to-Speech (TTS)
+
+Summaries are automatically converted to MP3 audio using Microsoft Edge TTS. Configure the voice:
+
+```bash
+# Default voice
+EDGE_TTS_VOICE=en-US-AriaNeural
+
+# Other examples: en-US-GuyNeural, en-GB-SoniaNeural
+```
+
+See [edge-tts voices](https://github.com/rany2/edge-tts) for all available options.
 
 #### Using the CLI
 
