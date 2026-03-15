@@ -4,15 +4,16 @@ import asyncio
 import argparse
 from typing import Optional
 from dotenv import load_dotenv
+
+# Load environment variables BEFORE importing config so LOG_FILE is available
+load_dotenv()
+
 import time
 import logging
 logging.getLogger("httpx").setLevel(logging.WARNING)
 from src.bluesky_feed_agent.config import logger
 logger.info(f"Program started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
 from src.bluesky_feed_agent.agent import run_feed_summary_agent
-
-# Load environment variables from .env file
-load_dotenv()
 
 
 async def main(user_handle: Optional[str] = None) -> None:

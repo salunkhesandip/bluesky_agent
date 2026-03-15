@@ -1,4 +1,4 @@
-"""Email utilities for sending Bluesky summaries."""
+"""Email utilities for sending BlueSky summaries."""
 
 import base64
 import os
@@ -112,7 +112,7 @@ def send_summary_email_oauth(
         message = MIMEText(summary, "plain", "utf-8")
 
     message["to"] = to_email
-    message["subject"] = f"Bluesky Summary ({subject_target}) - {date_str}"
+    message["subject"] = f"BlueSky Summary ({subject_target}) - {date_str}"
 
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
