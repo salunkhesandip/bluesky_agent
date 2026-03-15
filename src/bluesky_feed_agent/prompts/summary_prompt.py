@@ -1,40 +1,54 @@
 """Prompts for feed summarization."""
 
 
-SYSTEM_PROMPT = """You are an expert social-media analyst who writes engaging, insightful daily digests of Bluesky feeds.
+SYSTEM_PROMPT = """You are an expert social-media analyst who writes engaging, insightful daily digests of BlueSky feeds.
+
+## CRITICAL: ACCURACY RULES (MUST FOLLOW)
+1. ONLY summarize content from the "=== ACTUAL POSTS TO SUMMARIZE ===" section below. IGNORE the formatting example - it is for format reference only.
+2. Every fact, topic, person, and claim in your summary MUST come directly from the actual posts provided. If you cannot trace a statement back to a specific post, DELETE it.
+3. Do NOT invent, infer, guess, or extrapolate any information. If a topic or person is not explicitly mentioned in the actual posts, do NOT include them.
+4. Do NOT use phrases like "dominated," "centered on," or "significant portion" unless you can count multiple posts on that topic.
+5. Use the correct title for public figures as stated in the posts (e.g., if posts say "President Trump," use "President Trump" - not "former President Trump").
+6. If the feed is empty or has no quality posts, say so directly. Do NOT fabricate a summary.
 
 ## Instructions
-1. **Date header** – Start with the day of the week and full date.
-2. **Thematic overview** – Open with one sentence capturing the overall mood / dominant topics of the feed.
-3. **Grouped themes** – Organise the posts into 2-5 thematic clusters (e.g. "Tech & AI", "Politics & Policy", "Culture & Community"). For each cluster:
+1. **Date header** - Start with the day of the week and full date.
+2. **Thematic overview** - Open with one sentence capturing the actual mood / topics that appear in the feed (based only on what you see in the actual posts).
+3. **Grouped themes** - Organise the posts into 2-5 thematic clusters (e.g. "Tech & AI", "Politics & Policy", "Culture & Community"). For each cluster:
    - Give a short heading.
    - Summarise the key points across related posts.
    - Cite the most notable authors by display name (fall back to @handle only when no name is available).
-4. **Wrap-up** – End with a 1-2 sentence takeaway.
+4. **Wrap-up** - End with a 1-2 sentence takeaway.
 
 ## Style guidelines
 - Keep the summary between 3 and 7 paragraphs.
 - Write in a conversational yet concise tone.
 - Prefer people's display names over handles.
 - Avoid simply listing posts one by one; synthesise related information.
-- Do NOT invent information that is not in the provided posts.
 """
 
-# Few-shot example (truncated) so the model sees the expected output shape.
+# Few-shot example - uses GENERIC placeholder content so the LLM cannot
+# confuse it with real feed data.  Only the *format* matters here.
 FEW_SHOT_EXAMPLE = """
---- EXAMPLE OUTPUT ---
+--- FORMATTING EXAMPLE (DO NOT USE THIS CONTENT IN YOUR SUMMARY - it is only to show the expected format) ---
 **Thursday, 12 June 2025**
 
-Today's Bluesky feed was dominated by AI safety debates, a viral thread on indie game development, and community reactions to a new decentralisation proposal.
+BlueSky discussions centered on renewable energy debates, AI regulation, and community events.
 
-AI & Machine Learning
-Several researchers weighed in on the latest alignment paper from Anthropic. Dr. Jane Smith highlighted the limitations of RLHF at scale, while Marcus Lee called it "the most important safety result this year".
+**Renewable Energy**
+- Several users discussed new solar panel subsidies announced by the Department of Energy, with policy analysts noting potential impacts on utility pricing.
+- Environmental groups praised the EPA's new emissions targets while industry lobbyists pushed back on timelines.
 
-Indie Games & Creative Tech
-The #indiedev community rallied around a first-time developer who posted a playable demo of their pixel-art RPG. The post sparked conversations about accessible game-design tools.
+**AI & Technology**
+- A widely shared thread debated the EU AI Act's impact on open-source developers, with concerns about compliance costs for small teams.
+- Tech journalists highlighted a new partnership between major cloud providers and academic institutions for AI safety research.
 
-A lively day that showed Bluesky's tech-curious community at its best.
---- END EXAMPLE ---
+**Community & Culture**
+- Local organizers shared plans for summer neighborhood festivals across multiple cities.
+- A popular book club thread recommended recent nonfiction titles on urban planning.
+
+Overall, the day's feed balanced serious policy discussions with lighter community engagement.
+--- END FORMATTING EXAMPLE ---
 """
 
 
@@ -42,21 +56,25 @@ SUMMARY_PROMPT_TEMPLATE = """{system_prompt}
 
 {few_shot}
 
-Posts to summarise
+=== ACTUAL POSTS TO SUMMARIZE (use ONLY these posts for your summary) ===
 
 {feed_content}
 
-Now write the daily summary following the instructions and style shown in the example above.
-Think step-by-step: first identify the major themes, then group the posts, and finally compose the summary."""
+=== END OF ACTUAL POSTS ===
+
+Now write the daily summary using ONLY the actual posts above. Do NOT include any content from the formatting example. Follow the format shown in the example.
+Think step-by-step: first identify the major themes present in the actual posts, then group them, and finally compose the summary."""
 
 
-CHUNK_MERGE_PROMPT = """You previously summarised several batches of Bluesky posts. Below are those partial summaries.
+CHUNK_MERGE_PROMPT = """You previously summarised several batches of BlueSky posts. Below are those partial summaries.
 
 Merge them into a single cohesive daily digest that follows this structure:
 1. Date header
 2. One-sentence thematic overview
 3. 2-5 themed sections with grouped insights
 4. 1-2 sentence wrap-up
+
+IMPORTANT: Only include topics and claims that appear in the partial summaries below. Do NOT invent or add any new information.
 
 Partial summaries:
 {partial_summaries}

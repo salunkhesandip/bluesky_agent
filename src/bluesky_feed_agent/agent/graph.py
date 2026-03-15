@@ -125,9 +125,13 @@ def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
         if current:
             post_blocks.append("\n".join(current))
 
+        import datetime
+        # Generate date header
+        today_header = '**' + datetime.datetime.now().strftime('%A, %d %B %Y') + '**'
+        feed_with_date = today_header + '\n' + state.raw_feed_text
         if len(post_blocks) <= CHUNK_SIZE:
             # Single-shot summarisation
-            prompt = get_summary_prompt(state.raw_feed_text)
+            prompt = get_summary_prompt(feed_with_date)
             response = llm.invoke([HumanMessage(content=prompt)])
             state.summary = response.content
         else:
