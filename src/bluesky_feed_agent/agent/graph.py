@@ -21,10 +21,9 @@ from src.bluesky_feed_agent.utils import (
 )
 
 # ── Constants ──────────────────────────────────────────────────────────
-DEFAULT_POST_LIMIT = 20
+DEFAULT_POST_LIMIT = 50  # Default number of posts to fetch if not specified in env
 SEPARATOR_THRESHOLD = 10  # Minimum separator line length
-MIN_LIKES = 50  # Minimum likes threshold for filtering posts
-
+MIN_LIKES = 15  # Minimum likes threshold for filtering posts
 # Response keys
 RESP_POSTS = "posts"
 RESP_RAW_FEED = "raw_feed"
