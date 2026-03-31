@@ -138,6 +138,8 @@ The agent executes the following workflow:
 2. **format_feed**: Formats posts into readable text for the LLM
 3. **summarize**: Generates an AI-powered summary of the posts
 
+For a deep-dive into every LangGraph concept used in this project (StateGraph, nodes, edges, conditional routing, state pruning, chunking/map-reduce, and more), see **[LANGGRAPH_CONCEPTS.md](LANGGRAPH_CONCEPTS.md)**.
+
 ## Customization
 
 ### Changing the Summary Prompt
