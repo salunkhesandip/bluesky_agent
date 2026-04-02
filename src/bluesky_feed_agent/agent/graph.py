@@ -102,8 +102,14 @@ def format_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
         return state
 
 
-def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
-    """Generate summary of feed using LLM, with chunking for large feeds."""
+async def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
+    """Generate summary of feed using LLM, with parallel chunking for very large feeds.
+
+    Strategy:
+    - If the feed fits within CHUNK_SIZE, perform a single-shot LLM call.
+    - Otherwise, run chunk summarisation calls in parallel via `asyncio.gather`,
+      then perform a single merge call.
+    """
     try:
         if not state.raw_feed_text:
             state.error = "No feed content to summarize"
@@ -126,29 +132,38 @@ def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
 
         import datetime
         # Generate date header
-        today_header = '**' + datetime.datetime.now().strftime('%A, %d %B %Y') + '**'
-        feed_with_date = today_header + '\n' + state.raw_feed_text
+        today_header = "**" + datetime.datetime.now().strftime('%A, %d %B %Y') + "**"
+        feed_with_date = today_header + "\n" + state.raw_feed_text
+
         if len(post_blocks) <= CHUNK_SIZE:
-            # Single-shot summarisation
+            # Single-shot summarisation (use async LLM entrypoint)
             prompt = get_summary_prompt(feed_with_date)
-            response = llm.invoke([HumanMessage(content=prompt)])
+            response = await llm.ainvoke([HumanMessage(content=prompt)])
             state.summary = response.content
         else:
-            # Chunk → summarise each → merge
+            # Chunk → summarise each in parallel → merge
             logger.info(
                 "Large feed (%d blocks) – chunking into batches of %d",
                 len(post_blocks),
                 CHUNK_SIZE,
             )
-            partial_summaries: list[str] = []
-            for start in range(0, len(post_blocks), CHUNK_SIZE):
-                chunk_text = "\n".join(post_blocks[start : start + CHUNK_SIZE])
-                prompt = get_summary_prompt(chunk_text)
-                resp = llm.invoke([HumanMessage(content=prompt)])
-                partial_summaries.append(resp.content)
 
+            # Build prompts for each chunk
+            chunk_prompts = [
+                get_summary_prompt(
+                    "\n".join(post_blocks[start : start + CHUNK_SIZE])
+                )
+                for start in range(0, len(post_blocks), CHUNK_SIZE)
+            ]
+
+            # Invoke LLM on all chunks in parallel
+            chunk_calls = [llm.ainvoke([HumanMessage(content=p)]) for p in chunk_prompts]
+            chunk_responses = await asyncio.gather(*chunk_calls)
+            partial_summaries = [r.content for r in chunk_responses]
+
+            # Merge partial summaries with a single LLM call
             merge_prompt = get_chunk_merge_prompt(partial_summaries)
-            merged = llm.invoke([HumanMessage(content=merge_prompt)])
+            merged = await llm.ainvoke([HumanMessage(content=merge_prompt)])
             state.summary = merged.content
 
         # ── state pruning: drop raw text after summarisation ─────────
@@ -212,7 +227,8 @@ async def run_feed_summary_agent(
 
     initial_state = BlueskyFeedState(user_handle=user_handle or "")
 
-    result = agent.invoke(initial_state)
+    # Use the async invocation so async nodes (e.g. summarize_feed_node) run correctly
+    result = await agent.ainvoke(initial_state)
     logger.info("Agent graph execution completed")
 
     # Build response dictionary from result
