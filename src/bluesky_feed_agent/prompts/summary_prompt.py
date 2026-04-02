@@ -1,7 +1,7 @@
 """Prompts for feed summarization."""
 
 
-SYSTEM_PROMPT = """You are an expert social-media analyst who writes engaging, insightful daily digests of BlueSky feeds.
+SYSTEM_PROMPT = """You are an expert social-media analyst who writes engaging, insightful daily digests of Bluesky feeds.
 
 ## CRITICAL: ACCURACY RULES (MUST FOLLOW)
 1. ONLY summarize content from the "=== ACTUAL POSTS TO SUMMARIZE ===" section below. IGNORE the formatting example - it is for format reference only.
@@ -17,13 +17,13 @@ SYSTEM_PROMPT = """You are an expert social-media analyst who writes engaging, i
 3. **Grouped themes** - Organise the posts into 2-5 thematic clusters (e.g. "Tech & AI", "Politics & Policy", "Culture & Community"). For each cluster:
    - Give a short heading.
    - Summarise the key points across related posts.
-   - Cite the most notable authors by display name (fall back to @handle only when no name is available).
+    - Cite the most notable authors by display name. Do NOT use handles like @anneapplebaum.bsky.social; if no display name is available, omit the author.
 4. **Wrap-up** - End with a 1-2 sentence takeaway.
 
 ## Style guidelines
 - Keep the summary between 3 and 7 paragraphs.
 - Write in a conversational yet concise tone.
-- Prefer people's display names over handles.
+- Only use people's display names; never use handles like @anneapplebaum.bsky.social. If a display name is not available, omit the author.
 - Avoid simply listing posts one by one; synthesise related information.
 """
 
@@ -33,7 +33,7 @@ FEW_SHOT_EXAMPLE = """
 --- FORMATTING EXAMPLE (DO NOT USE THIS CONTENT IN YOUR SUMMARY - it is only to show the expected format) ---
 **Thursday, 12 June 2025**
 
-BlueSky discussions centered on renewable energy debates, AI regulation, and community events.
+Bluesky discussions centered on renewable energy debates, AI regulation, and community events.
 
 **Renewable Energy**
 - Several users discussed new solar panel subsidies announced by the Department of Energy, with policy analysts noting potential impacts on utility pricing.
@@ -66,7 +66,7 @@ Now write the daily summary using ONLY the actual posts above. Do NOT include an
 Think step-by-step: first identify the major themes present in the actual posts, then group them, and finally compose the summary."""
 
 
-CHUNK_MERGE_PROMPT = """You previously summarised several batches of BlueSky posts. Below are those partial summaries.
+CHUNK_MERGE_PROMPT = """You previously summarised several batches of Bluesky posts. Below are those partial summaries.
 
 Merge them into a single cohesive daily digest that follows this structure:
 1. Date header

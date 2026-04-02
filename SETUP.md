@@ -318,7 +318,7 @@ Then copy the printed URL, open it in your browser, and complete the sign-in.
 
 #### Token Expiry
 
-If you see `invalid_grant: Token has been expired or revoked`:
+If you see `invalid_grant: Token has been expired or revoked`, the agent now automatically removes `token.json` and reruns the OAuth flow the next time it sends email. You only need to follow these manual steps if the automatic refresh does not succeed:
 
 1. Delete `token.json`
 2. Run the agent again to re-authenticate

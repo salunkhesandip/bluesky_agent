@@ -37,7 +37,10 @@ MIN_POST_LENGTH = 15  # ignore very short / empty posts
 DUPLICATE_SIMILARITY_THRESHOLD = 0.85  # near-duplicate Jaccard threshold
 
 # Chunking – max posts per LLM call before we chunk-and-merge
-CHUNK_SIZE = 30
+# Increased to 150 to allow larger feeds to be summarized in a single
+# LLM call when possible. This reduces the number of remote Gemini calls
+# for feeds that previously required many chunks (e.g. 132 blocks).
+CHUNK_SIZE = 150
 
 # Retry configuration
 MAX_RETRIES = 3

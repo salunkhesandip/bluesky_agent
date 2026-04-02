@@ -1,4 +1,4 @@
-"""Email utilities for sending BlueSky summaries."""
+"""Email utilities for sending Bluesky summaries."""
 
 import base64
 import os
@@ -8,6 +8,7 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
 from google.auth.transport.requests import Request
+from google.auth.exceptions import RefreshError
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
@@ -51,6 +52,25 @@ def _authorize_gmail(credentials_file: str) -> Credentials:
         )
 
 
+def _write_token(token_file: str, creds: Credentials) -> None:
+    """Persist the Gmail token to disk."""
+
+    with open(token_file, "w", encoding="utf-8") as file:
+        file.write(creds.to_json())
+
+
+def _refresh_credentials(creds: Credentials, token_file: str) -> Credentials | None:
+    """Attempt to refresh expired credentials, otherwise remove the stale token."""
+
+    try:
+        creds.refresh(Request())
+        return creds
+    except RefreshError:
+        if os.path.exists(token_file):
+            os.remove(token_file)
+        return None
+
+
 def send_summary_email_oauth(
     summary: str, user_handle: str = "", audio_path: str | None = None
 ) -> str:
@@ -85,12 +105,12 @@ def send_summary_email_oauth(
 
     if not creds or not creds.valid:
         if creds and creds.expired and creds.refresh_token:
-            creds.refresh(Request())
-        else:
+            creds = _refresh_credentials(creds, token_file)
+
+        if not creds or not creds.valid:
             creds = _authorize_gmail(credentials_file)
 
-        with open(token_file, "w", encoding="utf-8") as file:
-            file.write(creds.to_json())
+        _write_token(token_file, creds)
 
     service = build("gmail", "v1", credentials=creds)
 
@@ -112,7 +132,7 @@ def send_summary_email_oauth(
         message = MIMEText(summary, "plain", "utf-8")
 
     message["to"] = to_email
-    message["subject"] = f"BlueSky Summary ({subject_target}) - {date_str}"
+    message["subject"] = f"Bluesky Summary ({subject_target}) - {date_str}"
 
     raw_message = base64.urlsafe_b64encode(message.as_bytes()).decode("utf-8")
     service.users().messages().send(userId="me", body={"raw": raw_message}).execute()
