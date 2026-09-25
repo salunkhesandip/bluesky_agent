@@ -2,8 +2,8 @@
 
 import pytest
 from unittest.mock import Mock, patch
-from src.bluesky_feed_agent.states import BlueskyFeedState
-from src.bluesky_feed_agent.tools import filter_posts, format_posts_for_llm
+from bluesky_feed_agent.states import BlueskyFeedState
+from bluesky_feed_agent.tools import filter_posts, format_posts_for_llm
 
 
 @pytest.fixture

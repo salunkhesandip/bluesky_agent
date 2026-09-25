@@ -17,3 +17,7 @@ htmlcov/
 *.swp
 *.swo
 node_modules/
+uv.lock
+logs/
+token.json
+credentials.json

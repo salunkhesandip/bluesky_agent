@@ -11,9 +11,9 @@ load_dotenv()
 import time
 import logging
 logging.getLogger("httpx").setLevel(logging.WARNING)
-from src.bluesky_feed_agent.config import logger
+from bluesky_feed_agent.config import logger
 logger.info(f"Program started at {time.strftime('%Y-%m-%d %H:%M:%S')}")
-from src.bluesky_feed_agent.agent import run_feed_summary_agent
+from bluesky_feed_agent.agent import run_feed_summary_agent
 
 
 async def main(user_handle: Optional[str] = None) -> None:

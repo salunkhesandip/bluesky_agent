@@ -5,7 +5,7 @@ import datetime
 
 from telegram import Bot
 
-from src.bluesky_feed_agent.config import logger
+from bluesky_feed_agent.config import logger
 
 
 async def send_summary_to_telegram(

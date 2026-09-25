@@ -5,7 +5,7 @@ import re
 import time
 from typing import Optional
 
-from src.bluesky_feed_agent.config import (
+from bluesky_feed_agent.config import (
     DUPLICATE_SIMILARITY_THRESHOLD,
     FEED_CACHE_TTL,
     MAX_RETRIES,

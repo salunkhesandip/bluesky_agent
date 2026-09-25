@@ -1,8 +1,8 @@
 """Example usage of the Bluesky Feed Agent."""
 
 import os
-from src.bluesky_feed_agent.agent import create_agent_graph
-from src.bluesky_feed_agent.states import BlueskyFeedState
+from bluesky_feed_agent.agent import create_agent_graph
+from bluesky_feed_agent.states import BlueskyFeedState
 
 
 def example_basic_usage():
