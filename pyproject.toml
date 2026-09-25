@@ -10,32 +10,44 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     # Core LangGraph ecosystem
-    "langgraph>=1.0.8", # core library for langraph
-    "langgraph-api==0.6.39", # API for interacting or extending langgraph system
-    "langgraph-cli>=0.4.11", # command line interface tool to interact with langgraph
-    "langsmith>=0.5.2", # Debugging, end-to-end tracing 
+    "langgraph>=1.2.12",
+    "langgraph-api>=0.14.4",
+    "langgraph-cli>=0.4.32",
+    "langsmith>=0.14.0",
 
-    # Core LangChain components 
-    "langchain-core>=1.2.5", # Low level foundation(interfaces + LCEL)
-    "langchain>=1.2.0", # Higher level utilities like o/p parsers, memory, document processing
-    "langchain-community>=0.4.1",#
-    "langchain-google-genai>=0.0.1",
-    
-    "pydantic>=2.0",# Data validation and settings management
-    
-    "atproto>=0.0.51", # Authenicated Transfer Protocol library
-    "google-api-python-client>=2.190.0",
-    "google-auth-httplib2>=0.2.0",
-    "google-auth-oauthlib>=1.2.0",
-    "edge-tts>=7.0.0",  # Text-to-speech for summary audio
-    "python-telegram-bot>=20.0",  # Telegram integration
+    # Core LangChain components
+    "langchain-core>=1.6.4",
+    "langchain>=1.4.2",
+    "langchain-community>=0.4.1",
+    "langchain-google-genai>=4.4.0",
+
+    "pydantic>=2.13.5",
+    "python-dotenv>=1.2.3",
+    "requests>=2.34.2",
+
+    "atproto>=0.0.51",
+    "google-api-python-client>=2.200.0",
+    "google-auth-httplib2>=0.4.2",
+    "google-auth-oauthlib>=1.4.1",
+    "edge-tts>=7.2.8",
+    "python-telegram-bot>=22.8",
 ]
 
 [project.optional-dependencies]
 dev = [
-    "pytest>=7.0",
-    "pytest-asyncio>=0.21.0",
-    "black>=23.0",
-    "isort>=5.0",
-    "mypy>=1.0",
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+    "black>=26.5.1",
+    "isort>=9.0.1",
+    "mypy>=2.3.1",
 ]
+
+[tool.pytest.ini_options]
+testpaths = ["src/bluesky_feed_agent/tests"]
+pythonpath = ["src"]
+
+[tool.isort]
+profile = "black"
+
+[tool.black]
+line-length = 88

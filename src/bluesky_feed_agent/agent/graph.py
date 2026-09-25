@@ -8,11 +8,11 @@ from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
-from src.bluesky_feed_agent.config import CHUNK_SIZE, logger
-from src.bluesky_feed_agent.prompts import get_chunk_merge_prompt, get_summary_prompt
-from src.bluesky_feed_agent.states import BlueskyFeedState
-from src.bluesky_feed_agent.tools import BlueskyClient, format_posts_for_llm
-from src.bluesky_feed_agent.utils import (
+from bluesky_feed_agent.config import CHUNK_SIZE, logger
+from bluesky_feed_agent.prompts import get_chunk_merge_prompt, get_summary_prompt
+from bluesky_feed_agent.states import BlueskyFeedState
+from bluesky_feed_agent.tools import BlueskyClient, format_posts_for_llm
+from bluesky_feed_agent.utils import (
     generate_summary_audio,
     get_bluesky_credentials,
     get_openai_api_key,
