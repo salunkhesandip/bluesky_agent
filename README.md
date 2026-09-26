@@ -161,7 +161,7 @@ posts = client.get_home_feed(limit=50)  # Fetch more posts
 In `src/bluesky_feed_agent/agent/graph.py`, change the model:
 
 ```python
-llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7, google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.7, google_api_key=api_key)
 ```
 
 ## Testing

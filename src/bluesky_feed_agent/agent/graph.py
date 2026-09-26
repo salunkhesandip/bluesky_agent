@@ -8,7 +8,12 @@ from langchain_core.messages import HumanMessage
 from langchain_google_genai import ChatGoogleGenerativeAI
 from langgraph.graph import END, StateGraph
 
-from bluesky_feed_agent.config import CHUNK_SIZE, logger
+from bluesky_feed_agent.config import (
+    CHUNK_SIZE,
+    DEFAULT_LLM_MODEL,
+    DEFAULT_TEMPERATURE,
+    logger,
+)
 from bluesky_feed_agent.prompts import get_chunk_merge_prompt, get_summary_prompt
 from bluesky_feed_agent.states import BlueskyFeedState
 from bluesky_feed_agent.tools import BlueskyClient, format_posts_for_llm
@@ -43,9 +48,11 @@ def _get_llm() -> ChatGoogleGenerativeAI:
     global _llm_instance
     if _llm_instance is None:
         api_key = get_openai_api_key()
+        model = os.getenv("LLM_MODEL", DEFAULT_LLM_MODEL)
+        temperature = float(os.getenv("LLM_TEMPERATURE", str(DEFAULT_TEMPERATURE)))
         _llm_instance = ChatGoogleGenerativeAI(
-            model="models/gemini-2.5-flash",
-            temperature=0.7,
+            model=model,
+            temperature=temperature,
             google_api_key=api_key,
         )
     return _llm_instance

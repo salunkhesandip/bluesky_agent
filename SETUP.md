@@ -65,8 +65,8 @@ Alternatively, using pip and requirements.txt:
 
 ```bash
 # Create virtual environment (optional)
-python3 -m venv venv
-source venv/bin/activate
+python3 -m venv .venv
+source .venv/bin/activate
 
 
 ### 5. Configure Credentials in WSL
@@ -510,7 +510,7 @@ bluesky_agent/
 In `src/bluesky_feed_agent/agent/graph.py`, modify the `summarize_feed_node` function:
 
 ```python
-llm = ChatGoogleGenerativeAI(model="gemini-pro", temperature=0.7, google_api_key=api_key)
+llm = ChatGoogleGenerativeAI(model="gemini-3.8-flash", temperature=0.7, google_api_key=api_key)
 ```
 
 ### Modify Summary Prompt
