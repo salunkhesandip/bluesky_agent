@@ -146,7 +146,7 @@ async def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
             # Single-shot summarisation (use async LLM entrypoint)
             prompt = get_summary_prompt(feed_with_date)
             response = await llm.ainvoke([HumanMessage(content=prompt)])
-            state.summary = response.content
+            state.summary = _normalize_summary(response.content)
         else:
             # Chunk → summarise each in parallel → merge
             logger.info(
@@ -166,12 +166,12 @@ async def summarize_feed_node(state: BlueskyFeedState) -> BlueskyFeedState:
             # Invoke LLM on all chunks in parallel
             chunk_calls = [llm.ainvoke([HumanMessage(content=p)]) for p in chunk_prompts]
             chunk_responses = await asyncio.gather(*chunk_calls)
-            partial_summaries = [r.content for r in chunk_responses]
+            partial_summaries = [_normalize_summary(r.content) for r in chunk_responses]
 
             # Merge partial summaries with a single LLM call
             merge_prompt = get_chunk_merge_prompt(partial_summaries)
             merged = await llm.ainvoke([HumanMessage(content=merge_prompt)])
-            state.summary = merged.content
+            state.summary = _normalize_summary(merged.content)
 
         # ── state pruning: drop raw text after summarisation ─────────
         state.raw_feed_text = None
@@ -329,6 +329,29 @@ async def _safe_telegram(summary: str, audio_path: Optional[str]) -> str:
         return f"failed: {e}"
 
 
+def _normalize_summary(value: Any) -> str:
+    """Convert list/dict-like model payloads into a plain summary string."""
+    if value is None:
+        return ""
+    if isinstance(value, str):
+        return value
+    if isinstance(value, list):
+        pieces: list[str] = []
+        for item in value:
+            normalized = _normalize_summary(item)
+            if normalized:
+                pieces.append(normalized)
+        return "\n".join(pieces)
+    if isinstance(value, tuple):
+        return _normalize_summary(list(value))
+    if isinstance(value, dict):
+        for key in ("text", "content", "summary"):
+            if key in value:
+                return _normalize_summary(value[key])
+        return str(value)
+    return str(value)
+
+
 def _build_response(result: Any) -> Dict[str, Any]:
     """Build response dictionary from agent result.
     
@@ -341,10 +364,11 @@ def _build_response(result: Any) -> Dict[str, Any]:
         Normalized response dictionary
     """
     if isinstance(result, dict):
+        summary = _normalize_summary(result.get("summary"))
         return {
             RESP_POSTS: result.get("posts"),
             RESP_RAW_FEED: result.get("raw_feed_text"),
-            RESP_SUMMARY: result.get("summary"),
+            RESP_SUMMARY: summary,
             RESP_ERROR: result.get("error"),
         }
     else:
@@ -352,7 +376,7 @@ def _build_response(result: Any) -> Dict[str, Any]:
         return {
             RESP_POSTS: result.posts,
             RESP_RAW_FEED: result.raw_feed_text,
-            RESP_SUMMARY: result.summary,
+            RESP_SUMMARY: _normalize_summary(result.summary),
             RESP_ERROR: result.error,
         }
 
@@ -366,7 +390,8 @@ def _extract_thematic_overview(summary: str) -> Optional[str]:
     Returns:
         First sentence after date header, or None if not found
     """
-    lines = summary.split("\n")
+    summary_text = _normalize_summary(summary)
+    lines = summary_text.split("\n")
     for line in lines:
         line = line.strip()
         if line and not line.startswith("**"):  # Skip date header

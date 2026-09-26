@@ -28,7 +28,7 @@ logger = logging.getLogger("bluesky_agent")
 logging.getLogger("google_genai.models").setLevel(logging.ERROR)
 
 # LLM Configuration
-DEFAULT_LLM_MODEL = "gemini-3.8-flash"
+DEFAULT_LLM_MODEL = "gemini-3.5-flash"
 DEFAULT_TEMPERATURE = 0.7
 
 # Bluesky Feed Configuration

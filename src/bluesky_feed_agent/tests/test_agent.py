@@ -2,6 +2,7 @@
 
 import pytest
 from unittest.mock import Mock, patch
+from bluesky_feed_agent.agent.graph import _normalize_summary
 from bluesky_feed_agent.states import BlueskyFeedState
 from bluesky_feed_agent.tools import filter_posts, format_posts_for_llm
 
@@ -94,6 +95,13 @@ def test_bluesky_feed_state_with_posts(sample_posts):
 
     assert len(state.posts) == 2
     assert state.posts[0]["author"] == "user1.bsky.social"
+
+
+def test_normalize_summary_from_list_like_llm_response():
+    """List-like LLM content should be flattened into a single summary string."""
+    value = ["This is a summary.", "This is more context."]
+
+    assert _normalize_summary(value) == "This is a summary.\nThis is more context."
 
 
 if __name__ == "__main__":
